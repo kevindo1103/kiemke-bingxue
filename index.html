@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kiểm Kê Giao Ca Bingxue</title>
+    <!-- Thư viện bắt buộc của Telegram Web App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Tailwind CSS để làm giao diện đẹp như App điện thoại -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tùy chỉnh màu sắc theo theme của Telegram */
+        body {
+            background-color: var(--tg-theme-bg-color, #f3f4f6);
+            color: var(--tg-theme-text-color, #111827);
+        }
+        .tg-button {
+            background-color: var(--tg-theme-button-color, #3b82f6);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+    </style>
+</head>
+<body class="antialiased pb-20">
+
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-md">
+        <!-- Header -->
+        <div class="bg-red-500 text-white p-4 text-center font-bold text-lg sticky top-0 z-10 shadow-sm">
+            🍦 BÁO CÁO KIỂM KÊ GIAO CA
+        </div>
+
+        <form id="kiemke-form" class="p-4 space-y-6">
+            
+            <!-- THÔNG TIN CHUNG -->
+            <div class="space-y-3">
+                <h3 class="font-semibold text-gray-700 border-b pb-1">👤 THÔNG TIN CA TRỰC</h3>
+                
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Tên nhân viên báo cáo</label>
+                    <input type="text" id="nguoi_giao" required class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="Tên của bạn...">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Thời gian ca làm</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="time" id="gio_bat_dau" required value="08:00" class="w-full border rounded p-2 text-sm outline-none focus:border-red-500">
+                        <span class="text-gray-500 font-medium text-sm">đến</span>
+                        <input type="time" id="gio_ket_thuc" required value="13:00" class="w-full border rounded p-2 text-sm outline-none focus:border-red-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- KIỂM KÊ VẬT TƯ -->
+            <div class="space-y-3">
+                <h3 class="font-semibold text-gray-700 border-b pb-1">📦 KIỂM ĐẾM VẬT TƯ</h3>
+                
+                <!-- Hàm JS sẽ render danh sách này để code ngắn gọn -->
+                <div id="vattu-container" class="space-y-3"></div>
+            </div>
+
+            <!-- KIỂM KÊ TIỀN MẶT -->
+            <div class="space-y-3">
+                <h3 class="font-semibold text-gray-700 border-b pb-1">💵 KIỂM KÊ QUỸ TIỀN</h3>
+                
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Tổng tiền trong két (VNĐ)</label>
+                    <input type="number" id="tien_ket" required class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="Ví dụ: 1500000">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Tiền nộp về Cửa hàng (VNĐ)</label>
+                    <input type="number" id="tien_nop" required class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="Ví dụ: 1000000">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Ghi chú sự cố quỹ (Nếu có)</label>
+                    <textarea id="tien_note" rows="2" class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="VD: Khách mã ABC thiếu 5k..."></textarea>
+                </div>
+            </div>
+
+            <!-- BUTTON GỬI -->
+            <button type="submit" class="tg-button w-full py-3 rounded-lg font-bold text-center mt-4 shadow-md active:scale-95 transition-transform">
+                🚀 XÁC NHẬN GỬI BÁO CÁO
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Khởi tạo Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Ép App mở full màn hình điện thoại
+
+        // Danh sách vật tư cần kiểm kê
+        const danhSachVatTu = [
+            { id: 'coc700', name: 'Cốc 700ml' },
+            { id: 'coc500', name: 'Cốc 500ml' },
+            { id: 'cocU400', name: 'Cốc U400' },
+            { id: 'xo1L', name: 'Xô 1L' },
+            { id: 'cocgiay', name: 'Cốc giấy đỏ' },
+            { id: 'ocque', name: 'Vỏ ốc quế' }
+        ];
+
+        // Render giao diện vật tư
+        const container = document.getElementById('vattu-container');
+        danhSachVatTu.forEach(vt => {
+            container.innerHTML += `
+                <div class="bg-gray-50 p-3 rounded border">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="font-medium text-sm text-gray-800">${vt.name}</label>
+                        <input type="number" id="qty_${vt.id}" required class="w-24 border rounded p-1 text-center text-sm outline-none" placeholder="Số lượng">
+                    </div>
+                    <input type="text" id="note_${vt.id}" class="w-full border rounded p-1.5 text-xs outline-none text-gray-600 bg-white" placeholder="Ghi chú (Vỡ, móp, mất... để trống nếu khớp)">
+                </div>
+            `;
+        });
+
+        // Xử lý sự kiện bấm Gửi Báo Cáo
+        document.getElementById('kiemke-form').addEventListener('submit', function(e) {
+            e.preventDefault(); // Ngăn form tự reload trang
+
+            // 1. Thu thập dữ liệu
+            let formData = {
+                type: "BAO_CAO_KIEM_KE",
+                thong_tin: {
+                    nguoi_giao: document.getElementById('nguoi_giao').value,
+                    ca_lam: `Từ ${document.getElementById('gio_bat_dau').value} đến ${document.getElementById('gio_ket_thuc').value}`
+                },
+                vat_tu: {},
+                tien_mat: {
+                    trong_ket: document.getElementById('tien_ket').value,
+                    nop_ve: document.getElementById('tien_nop').value,
+                    ghi_chu: document.getElementById('tien_note').value || "Không có"
+                }
+            };
+
+            // Lấy số lượng và ghi chú từng vật tư
+            danhSachVatTu.forEach(vt => {
+                formData.vat_tu[vt.name] = {
+                    so_luong: document.getElementById(`qty_${vt.id}`).value,
+                    ghi_chu: document.getElementById(`note_${vt.id}`).value || "Khớp"
+                };
+            });
+
+            // 2. Gửi dữ liệu về lại cho Bot Telegram
+            tg.sendData(JSON.stringify(formData));
+            
+            // 3. Đóng Mini App
+            tg.close();
+        });
+    </script>
+</body>
+</html>
