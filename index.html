@@ -6,16 +6,15 @@
     <title>Kiểm Kê Giao Ca Bingxue</title>
     <!-- Thư viện bắt buộc của Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Tailwind CSS để làm giao diện đẹp như App điện thoại -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Tùy chỉnh màu sắc theo theme của Telegram */
         body {
             background-color: var(--tg-theme-bg-color, #f3f4f6);
             color: var(--tg-theme-text-color, #111827);
         }
         .tg-button {
-            background-color: var(--tg-theme-button-color, #3b82f6);
+            background-color: var(--tg-theme-button-color, #ff6600);
             color: var(--tg-theme-button-text-color, #ffffff);
         }
     </style>
@@ -24,8 +23,10 @@
 
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md">
         <!-- Header -->
-        <div class="bg-red-500 text-white p-4 text-center font-bold text-lg sticky top-0 z-10 shadow-sm">
-            🍦 BÁO CÁO KIỂM KÊ GIAO CA
+        <div class="bg-[#ff6600] text-white p-3 flex justify-center items-center space-x-2 sticky top-0 z-10 shadow-sm">
+            <!-- Anh upload file ảnh logo của quán đổi tên thành logo.png lên Github để nó hiển thị nhé -->
+            <img src="logo.png" alt="Bingxue Logo" class="h-8 w-8 object-contain bg-white rounded-full p-0.5" onerror="this.src='https://ui-avatars.com/api/?name=BX&background=fff&color=ff6600'">
+            <span class="font-bold text-lg">BÁO CÁO KIỂM KÊ</span>
         </div>
 
         <form id="kiemke-form" class="p-4 space-y-6">
@@ -35,16 +36,30 @@
                 <h3 class="font-semibold text-gray-700 border-b pb-1">👤 THÔNG TIN CA TRỰC</h3>
                 
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Tên nhân viên báo cáo</label>
-                    <input type="text" id="nguoi_giao" required class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="Tên của bạn...">
+                    <label class="block text-xs text-gray-500 mb-1">Tên nhân viên báo cáo <span class="text-red-500 font-bold">*</span></label>
+                    <input type="text" id="nguoi_giao" required class="w-full border rounded p-2 text-sm outline-none focus:border-[#ff6600]" placeholder="Tên của bạn...">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Loại báo cáo <span class="text-red-500 font-bold">*</span></label>
+                        <select id="loai_bao_cao" required class="w-full border rounded p-2 text-sm outline-none bg-white focus:border-[#ff6600] font-bold text-[#ff6600]">
+                            <option value="ĐẦU CA">🟢 ĐẦU CA (Mới đến)</option>
+                            <option value="CUỐI CA">🔴 CUỐI CA (Sắp về)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Ngày làm việc <span class="text-red-500 font-bold">*</span></label>
+                        <input type="date" id="ngay_lam" required class="w-full border rounded p-2 text-sm outline-none focus:border-[#ff6600] bg-white">
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Thời gian ca làm</label>
-                    <div class="flex items-center space-x-2">
-                        <input type="time" id="gio_bat_dau" required value="08:00" class="w-full border rounded p-2 text-sm outline-none focus:border-red-500">
-                        <span class="text-gray-500 font-medium text-sm">đến</span>
-                        <input type="time" id="gio_ket_thuc" required value="13:00" class="w-full border rounded p-2 text-sm outline-none focus:border-red-500">
+                    <label class="block text-xs text-gray-500 mb-1">Ca làm (Từ giờ - Đến giờ) <span class="text-red-500 font-bold">*</span></label>
+                    <div class="flex items-center space-x-1">
+                        <input type="time" id="gio_bat_dau" required value="08:00" class="w-full border rounded p-2 text-sm outline-none focus:border-[#ff6600] bg-white">
+                        <span class="text-gray-400 font-medium">-</span>
+                        <input type="time" id="gio_ket_thuc" required value="13:00" class="w-full border rounded p-2 text-sm outline-none focus:border-[#ff6600] bg-white">
                     </div>
                 </div>
             </div>
@@ -52,8 +67,6 @@
             <!-- KIỂM KÊ VẬT TƯ -->
             <div class="space-y-3">
                 <h3 class="font-semibold text-gray-700 border-b pb-1">📦 KIỂM ĐẾM VẬT TƯ</h3>
-                
-                <!-- Hàm JS sẽ render danh sách này để code ngắn gọn -->
                 <div id="vattu-container" class="space-y-3"></div>
             </div>
 
@@ -62,32 +75,37 @@
                 <h3 class="font-semibold text-gray-700 border-b pb-1">💵 KIỂM KÊ QUỸ TIỀN</h3>
                 
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Tổng tiền trong két (VNĐ)</label>
-                    <input type="number" id="tien_ket" required class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="Ví dụ: 1500000">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Tiền nộp về Cửa hàng (VNĐ)</label>
-                    <input type="number" id="tien_nop" required class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="Ví dụ: 1000000">
+                    <label class="block text-xs text-gray-500 mb-1">Tổng tiền trong két (VNĐ) <span class="text-red-500 font-bold">*</span></label>
+                    <input type="number" id="tien_ket" required class="w-full border rounded p-2 text-sm outline-none focus:border-[#ff6600]" placeholder="Ví dụ: 1500000">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Ghi chú sự cố quỹ (Nếu có)</label>
-                    <textarea id="tien_note" rows="2" class="w-full border rounded p-2 text-sm outline-none focus:border-red-500" placeholder="VD: Khách mã ABC thiếu 5k..."></textarea>
+                    <textarea id="tien_note" rows="2" class="w-full border rounded p-2 text-sm outline-none focus:border-[#ff6600]" placeholder="VD: Khách mã ABC thiếu 5k..."></textarea>
                 </div>
             </div>
 
+            <!-- NÚT BÁO CÁO LẠI BỔ SUNG -->
+            <div class="bg-orange-50 border border-orange-200 p-3 rounded-lg flex items-start space-x-2 mt-4">
+                <input type="checkbox" id="is_sua_loi" class="mt-1 w-4 h-4 text-[#ff6600] rounded border-gray-300 focus:ring-[#ff6600]">
+                <label for="is_sua_loi" class="text-sm text-gray-700 font-medium">
+                    ⚠️ Đây là bản nộp lại để sửa lỗi cho báo cáo bị sai trước đó.
+                </label>
+            </div>
+
             <!-- BUTTON GỬI -->
-            <button type="submit" class="tg-button w-full py-3 rounded-lg font-bold text-center mt-4 shadow-md active:scale-95 transition-transform">
+            <button type="submit" class="tg-button w-full py-3 rounded-lg font-bold text-center mt-2 shadow-md active:scale-95 transition-transform">
                 🚀 XÁC NHẬN GỬI BÁO CÁO
             </button>
         </form>
     </div>
 
     <script>
-        // Khởi tạo Telegram Web App
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Ép App mở full màn hình điện thoại
+        tg.expand(); 
 
-        // Danh sách vật tư cần kiểm kê
+        // Tự động set Ngày mặc định là ngày hôm nay
+        document.getElementById('ngay_lam').valueAsDate = new Date();
+
         const danhSachVatTu = [
             { id: 'coc700', name: 'Cốc 700ml' },
             { id: 'coc500', name: 'Cốc 500ml' },
@@ -97,40 +115,45 @@
             { id: 'ocque', name: 'Vỏ ốc quế' }
         ];
 
-        // Render giao diện vật tư
         const container = document.getElementById('vattu-container');
         danhSachVatTu.forEach(vt => {
             container.innerHTML += `
                 <div class="bg-gray-50 p-3 rounded border">
                     <div class="flex justify-between items-center mb-2">
-                        <label class="font-medium text-sm text-gray-800">${vt.name}</label>
-                        <input type="number" id="qty_${vt.id}" required class="w-24 border rounded p-1 text-center text-sm outline-none" placeholder="Số lượng">
+                        <label class="font-medium text-sm text-gray-800">${vt.name} <span class="text-red-500 font-bold">*</span></label>
+                        <input type="number" id="qty_${vt.id}" required class="w-24 border rounded p-1 text-center text-sm outline-none focus:border-[#ff6600] bg-white shadow-sm" placeholder="Số lượng">
                     </div>
-                    <input type="text" id="note_${vt.id}" class="w-full border rounded p-1.5 text-xs outline-none text-gray-600 bg-white" placeholder="Ghi chú (Vỡ, móp, mất... để trống nếu khớp)">
+                    <input type="text" id="note_${vt.id}" class="w-full border rounded p-1.5 text-xs outline-none text-gray-600 bg-white focus:border-[#ff6600]" placeholder="Ghi chú (Vỡ, móp, mất... để trống nếu số khớp)">
                 </div>
             `;
         });
 
-        // Xử lý sự kiện bấm Gửi Báo Cáo
         document.getElementById('kiemke-form').addEventListener('submit', function(e) {
-            e.preventDefault(); // Ngăn form tự reload trang
+            e.preventDefault(); 
 
-            // 1. Thu thập dữ liệu
+            let isSuaLoi = document.getElementById('is_sua_loi').checked;
+            
+            // Xử lý định dạng ngày hiển thị đẹp (DD/MM/YYYY)
+            let ngayRaw = document.getElementById('ngay_lam').value;
+            let parts = ngayRaw.split('-');
+            let ngayFormat = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
             let formData = {
                 type: "BAO_CAO_KIEM_KE",
+                is_sua_loi: isSuaLoi, 
                 thong_tin: {
                     nguoi_giao: document.getElementById('nguoi_giao').value,
-                    ca_lam: `Từ ${document.getElementById('gio_bat_dau').value} đến ${document.getElementById('gio_ket_thuc').value}`
+                    loai_bao_cao: document.getElementById('loai_bao_cao').value,
+                    ca_lam: `Ngày ${ngayFormat} | Từ ${document.getElementById('gio_bat_dau').value} đến ${document.getElementById('gio_ket_thuc').value}`
                 },
                 vat_tu: {},
                 tien_mat: {
                     trong_ket: document.getElementById('tien_ket').value,
-                    nop_ve: document.getElementById('tien_nop').value,
+                    nop_ve: "0",
                     ghi_chu: document.getElementById('tien_note').value || "Không có"
                 }
             };
 
-            // Lấy số lượng và ghi chú từng vật tư
             danhSachVatTu.forEach(vt => {
                 formData.vat_tu[vt.name] = {
                     so_luong: document.getElementById(`qty_${vt.id}`).value,
@@ -138,10 +161,7 @@
                 };
             });
 
-            // 2. Gửi dữ liệu về lại cho Bot Telegram
             tg.sendData(JSON.stringify(formData));
-            
-            // 3. Đóng Mini App
             tg.close();
         });
     </script>
