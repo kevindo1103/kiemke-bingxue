@@ -9,13 +9,19 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Ép Form luôn hiển thị chuẩn ở chế độ sáng, chống lỗi chữ trắng của Dark Mode */
         body {
-            background-color: var(--tg-theme-bg-color, #f3f4f6);
-            color: var(--tg-theme-text-color, #111827);
+            background-color: #f3f4f6 !important;
+            color: #111827 !important;
+            color-scheme: light;
+        }
+        input, select, textarea {
+            color: #111827 !important; 
+            background-color: #ffffff !important;
         }
         .tg-button {
-            background-color: var(--tg-theme-button-color, #ff6600);
-            color: var(--tg-theme-button-text-color, #ffffff);
+            background-color: #ff6600 !important;
+            color: #ffffff !important;
         }
     </style>
 </head>
@@ -24,7 +30,6 @@
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md">
         <!-- Header -->
         <div class="bg-[#ff6600] text-white p-3 flex justify-center items-center space-x-2 sticky top-0 z-10 shadow-sm">
-            <!-- Anh upload file ảnh logo của quán đổi tên thành logo.png lên Github để nó hiển thị nhé -->
             <img src="logo.png" alt="Bingxue Logo" class="h-8 w-8 object-contain bg-white rounded-full p-0.5" onerror="this.src='https://ui-avatars.com/api/?name=BX&background=fff&color=ff6600'">
             <span class="font-bold text-lg">BÁO CÁO KIỂM KÊ</span>
         </div>
@@ -161,6 +166,7 @@
                 };
             });
 
+            // Gửi dữ liệu JSON về Bot
             tg.sendData(JSON.stringify(formData));
             tg.close();
         });
