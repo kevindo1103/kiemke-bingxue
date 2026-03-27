@@ -27,7 +27,7 @@
 </head>
 <body class="antialiased pb-20">
 
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-md">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-md relative">
         <!-- Header -->
         <div class="bg-[#ff6600] text-white p-3 flex justify-center items-center space-x-2 sticky top-0 z-10 shadow-sm">
             <img src="logo.png" alt="Bingxue Logo" class="h-8 w-8 object-contain bg-white rounded-full p-0.5" onerror="this.src='https://ui-avatars.com/api/?name=BX&background=fff&color=ff6600'">
@@ -97,11 +97,34 @@
                 </label>
             </div>
 
-            <!-- BUTTON GỬI -->
+            <!-- BUTTON XÁC NHẬN BAN ĐẦU -->
             <button type="submit" class="tg-button w-full py-3 rounded-lg font-bold text-center mt-2 shadow-md active:scale-95 transition-transform">
                 🚀 XÁC NHẬN GỬI BÁO CÁO
             </button>
         </form>
+    </div>
+
+    <!-- MÀN HÌNH POPUP XÁC NHẬN LẠI SỐ LIỆU TRƯỚC KHI GỬI CHÍNH THỨC -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-[#ff6600] text-white p-3 font-bold text-center flex items-center justify-center space-x-2">
+                <span>📋 KIỂM TRA LẠI SỐ LIỆU</span>
+            </div>
+            
+            <!-- Nơi chứa nội dung summary -->
+            <div id="confirm-content" class="p-4 overflow-y-auto flex-1 text-gray-800 text-sm space-y-3">
+                <!-- Javascript sẽ tự động nhét chữ vào đây -->
+            </div>
+            
+            <div class="p-4 border-t flex space-x-3 bg-gray-50">
+                <button type="button" onclick="closeConfirmModal()" class="flex-1 py-2 rounded-lg font-bold text-gray-600 bg-gray-200 active:scale-95 transition-transform">
+                    ✏️ Sửa lại
+                </button>
+                <button type="button" onclick="sendDataToBot()" class="flex-1 py-2 rounded-lg font-bold text-white bg-[#ff6600] active:scale-95 transition-transform shadow-md">
+                    ✅ GỬI LUÔN
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -133,17 +156,20 @@
             `;
         });
 
+        // Biến toàn cục để lưu dữ liệu tạm thời chờ xác nhận
+        let currentFormData = null;
+
         document.getElementById('kiemke-form').addEventListener('submit', function(e) {
             e.preventDefault(); 
 
             let isSuaLoi = document.getElementById('is_sua_loi').checked;
             
-            // Xử lý định dạng ngày hiển thị đẹp (DD/MM/YYYY)
             let ngayRaw = document.getElementById('ngay_lam').value;
             let parts = ngayRaw.split('-');
             let ngayFormat = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
-            let formData = {
+            // 1. Gom dữ liệu vào Object
+            currentFormData = {
                 type: "BAO_CAO_KIEM_KE",
                 is_sua_loi: isSuaLoi, 
                 thong_tin: {
@@ -159,17 +185,59 @@
                 }
             };
 
+            // 2. Tạo nội dung tóm tắt để in ra Màn hình Xác nhận
+            let summaryHTML = `
+                <div class="border-b pb-2 mb-2">
+                    <p>👤 <b>Nhân viên:</b> ${currentFormData.thong_tin.nguoi_giao}</p>
+                    <p>⏰ <b>Loại:</b> <span class="text-[#ff6600] font-bold">${currentFormData.thong_tin.loai_bao_cao}</span></p>
+                    <p>📅 <b>Ca làm:</b> ${currentFormData.thong_tin.ca_lam}</p>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-600 mb-1">📦 CHI TIẾT VẬT TƯ:</p>
+                    <ul class="list-none space-y-1">
+            `;
+
             danhSachVatTu.forEach(vt => {
-                formData.vat_tu[vt.name] = {
-                    so_luong: document.getElementById(`qty_${vt.id}`).value,
-                    ghi_chu: document.getElementById(`note_${vt.id}`).value || "Khớp"
-                };
+                let sl = document.getElementById(`qty_${vt.id}`).value;
+                let gc = document.getElementById(`note_${vt.id}`).value || "Khớp";
+                currentFormData.vat_tu[vt.name] = { so_luong: sl, ghi_chu: gc };
+                
+                let gc_text = gc !== "Khớp" ? ` <span class="text-red-500 italic text-xs">(${gc})</span>` : "";
+                summaryHTML += `<li>- ${vt.name}: <b class="text-[#ff6600]">${sl}</b>${gc_text}</li>`;
             });
 
-            // Gửi dữ liệu JSON về Bot
-            tg.sendData(JSON.stringify(formData));
-            tg.close();
+            let tienKetFormat = parseInt(currentFormData.tien_mat.trong_ket).toLocaleString('vi-VN');
+            summaryHTML += `
+                    </ul>
+                </div>
+                <div class="border-t pt-2 mt-2">
+                    <p class="font-bold text-gray-600 mb-1">💵 QUỸ TIỀN MẶT:</p>
+                    <p>- Trong két: <b class="text-[#ff6600]">${tienKetFormat} VNĐ</b></p>
+                    <p class="text-xs text-gray-500 mt-1">- Ghi chú: ${currentFormData.tien_mat.ghi_chu}</p>
+                </div>
+            `;
+
+            if (isSuaLoi) {
+                summaryHTML = `<div class="bg-red-100 text-red-600 p-2 rounded mb-3 text-center font-bold text-xs animate-pulse">⚠️ LƯU Ý: ĐÂY LÀ BẢN GỬI LẠI ĐỂ SỬA LỖI</div>` + summaryHTML;
+            }
+
+            // Nhét nội dung vào hộp thoại và hiển thị lên
+            document.getElementById('confirm-content').innerHTML = summaryHTML;
+            document.getElementById('confirm-modal').classList.remove('hidden');
         });
+
+        // Hàm Đóng Modal nếu nhân viên muốn sửa lại
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        // Hàm Gửi thật sự về cho Bot Telegram
+        function sendDataToBot() {
+            if (currentFormData) {
+                tg.sendData(JSON.stringify(currentFormData));
+                tg.close();
+            }
+        }
     </script>
 </body>
 </html>
